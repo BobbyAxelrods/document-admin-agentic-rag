@@ -1,0 +1,32 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+admin_venv/
+env/
+venv/
+.env
+*.env
+*.env.*
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+*.cer
+*.der
+*.p7b
+*.log
+logs/
+*.sqlite3
+*.db
+.vscode/
+.idea/
+*.bak
+*.swp
