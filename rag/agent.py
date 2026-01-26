@@ -20,11 +20,19 @@ from rag.tools import (
     delete_file_from_corpus,
     query_corpus,
     get_corpus_id_by_display_name,
-    get_file_id_by_name
+    get_file_id_by_name,
+    list_gcs_buckets,
+    create_gcs_bucket,
+    upload_file_to_gcs,
+    list_blobs,
+    move_gcs_file,
+    delete_gcs_file,
+    delete_gcs_bucket
 )
 
+
 load_dotenv()
-AZURE = os.getenv("AZURE")
+AZURE = os.getenv("AZURE", "azure/gpt-4o")
 
 # build the instruction loader 
 
@@ -42,13 +50,14 @@ root_agent = Agent(
     description="managing rag data source lifecycle",
     instruction = load_instructions("admin"),
     tools = [
-        # Storage Tools (Commented out)
-        # list_buckets,
-        # create_bucket,
-        # upload_file,
-        # list_files, # Note: list_files is ambiguous if both are imported. We are using corpus list_files now.
-        # move_file,
-        # delete_file,
+        # Storage Tools
+        list_gcs_buckets,
+        create_gcs_bucket,
+        upload_file_to_gcs,
+        list_blobs,
+        move_gcs_file,
+        delete_gcs_file,
+        delete_gcs_bucket,
     
         # RAG Corpus Tools
         create_corpus,

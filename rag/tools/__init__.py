@@ -1,4 +1,14 @@
-# Import tools
+# Exporting all tools
+from rag.tools.storage import (
+    list_gcs_buckets,
+    create_gcs_bucket,
+    upload_file_to_gcs,
+    list_blobs,
+    move_gcs_file,
+    delete_gcs_file,
+    delete_gcs_bucket
+)
+
 from rag.tools.corpus import (
     create_corpus,
     list_corpora,
@@ -13,16 +23,6 @@ from rag.tools.corpus import (
     get_corpus_id_by_display_name,
     get_file_id_by_name
 )
-
-# Commenting out Storage and Lifecycle tools for isolated Corpus testing
-# from rag.tools.storage import (
-#     list_buckets,
-#     create_bucket,
-#     upload_file,
-#     list_files as list_bucket_files,
-#     move_file,
-#     delete_file
-# )
 
 # from rag.tools.lifecycle import (
 #     create_daily_test_corpus,

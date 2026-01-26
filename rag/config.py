@@ -9,7 +9,7 @@ AGENT_NAME = "pru-rag-admin"
 
 # GCS Storage Settings
 GCS_DEFAULT_STORAGE_CLASS = "STANDARD"
-GCS_DEFAULT_LOCATION = "US"
+GCS_DEFAULT_LOCATION = "ASIA"
 GCS_LIST_BUCKETS_MAX_RESULTS = 50
 GCS_LIST_BLOBS_MAX_RESULTS = 100
 
@@ -21,4 +21,5 @@ RAG_DEFAULT_VECTOR_DISTANCE_THRESHOLD = 0.5
 
 # Logging Settings
 LOG_LEVEL = "INFO" 
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 AGENT_OUTPUT_KEY = "last_response"
