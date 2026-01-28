@@ -1,5 +1,5 @@
 from google.cloud import storage
-from google.api_core.exceptions import GoogleAPIError
+from google.api_core.exceptions import GoogleAPIError, Conflict, Forbidden, BadRequest
 from google.adk.tools import ToolContext
 from typing import List, Dict, Any, Optional
 import logging
@@ -51,32 +51,89 @@ def create_gcs_bucket(
         storage_class = GCS_DEFAULT_STORAGE_CLASS
     if location is None:
         location = GCS_DEFAULT_LOCATION
+    
+    # Get project ID from client
+    project_id = client.project
+    
+    # Sanitize and make bucket name unique
+    import re
+    sanitized_name = re.sub(r'[^a-z0-9-]', '-', bucket_name.lower())
+    sanitized_name = sanitized_name.strip('-')
+    
+    # Make globally unique by adding project ID
+    unique_bucket_name = f"{sanitized_name}-{project_id}"
+    
+    # Ensure within 63 char limit
+    if len(unique_bucket_name) > 63:
+        unique_bucket_name = unique_bucket_name[:63].rstrip('-')
         
     try:
-        if client.lookup_bucket(bucket_name):
-            return {
-                "status": "warning", 
-                "message": f"Bucket {bucket_name} already exists",
-                "bucket_name": bucket_name
-            }
-            
-        bucket = client.bucket(bucket_name)
+        bucket = client.bucket(unique_bucket_name)
         bucket.storage_class = storage_class
         new_bucket = client.create_bucket(bucket, location=location)
         
         if hasattr(tool_context, "state"):
-            tool_context.state["last_bucket_name"] = bucket_name
+            tool_context.state["last_bucket_name"] = unique_bucket_name
             
         return {
             "status": "success",
-            "bucket_name": bucket_name,
+            "bucket_name": unique_bucket_name,
+            "original_name": bucket_name,
             "self_link": new_bucket.self_link,
             "location": new_bucket.location,
-            "message": f"Successfully created bucket '{bucket_name}' in location '{location}'"
+            "storage_class": new_bucket.storage_class,
+            "message": f"Successfully created bucket '{unique_bucket_name}' (from '{bucket_name}') in location '{location}'"
         }
+        
+    except Conflict:
+        # Even with project ID, someone in your project already created it
+        return {
+            "status": "exists",
+            "bucket_name": unique_bucket_name,
+            "original_name": bucket_name,
+            "message": f"Bucket '{unique_bucket_name}' already exists in your project"
+        }
+        
+    except Forbidden as e:
+        error_msg = str(e).lower()
+        
+        # Check different forbidden scenarios
+        if "already exists" in error_msg or "already owned" in error_msg:
+            # Bucket name taken globally (extremely rare with project ID suffix)
+            import time
+            timestamp_suffix = int(time.time())
+            suggestion = f"{sanitized_name}-{project_id}-{timestamp_suffix}"
+            
+            return {
+                "status": "error",
+                "error_type": "global_name_conflict",
+                "bucket_name": unique_bucket_name,
+                "message": f"Bucket name '{unique_bucket_name}' is globally taken. Try: {suggestion}",
+                "suggestion": suggestion
+            }
+        else:
+            # Actual permission issue
+            return {
+                "status": "error",
+                "error_type": "permission_denied",
+                "bucket_name": unique_bucket_name,
+                "message": f"Permission denied. Ensure service account has 'roles/storage.admin'",
+                "error_details": str(e)
+            }
+        
+    except BadRequest as e:
+        return {
+            "status": "error",
+            "error_type": "invalid_request",
+            "bucket_name": unique_bucket_name,
+            "message": f"Invalid bucket configuration: {str(e)}"
+        }
+        
     except Exception as e:
         return {
             "status": "error",
+            "error_type": "unknown",
+            "bucket_name": unique_bucket_name,
             "error_message": str(e),
             "message": f"Failed to create bucket: {str(e)}"
         }

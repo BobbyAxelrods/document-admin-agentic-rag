@@ -14,12 +14,17 @@ GCS_LIST_BUCKETS_MAX_RESULTS = 50
 GCS_LIST_BLOBS_MAX_RESULTS = 100
 
 # RAG Corpus Settings
-RAG_DEFAULT_EMBEDDING_MODEL = "publishers/google/models/text-embedding-005" # Simplified model name
-RAG_DEFAULT_TOP_K = 10  # Default number of results for single corpus query
-RAG_DEFAULT_SEARCH_TOP_K = 5  # Default number of results per corpus for search_all
+RAG_DEFAULT_EMBEDDING_MODEL = "publishers/google/models/text-embedding-005"
+RAG_DEFAULT_TOP_K = 10
+RAG_DEFAULT_SEARCH_TOP_K = 5
 RAG_DEFAULT_VECTOR_DISTANCE_THRESHOLD = 0.5
+RAG_DEFAULT_CHUNK_SIZE = 512
+RAG_DEFAULT_CHUNK_OVERLAP = 100
+RAG_DEFAULT_EMBEDDING_REQUESTS_PER_MIN = 1000
 
 # Logging Settings
 LOG_LEVEL = "INFO" 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 AGENT_OUTPUT_KEY = "last_response"
+
+

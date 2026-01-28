@@ -15,7 +15,7 @@ from rag.tools import (
     get_corpus,
     delete_corpus,
     import_files,
-    list_files,
+    list_files, 
     get_file,
     delete_file_from_corpus,
     query_corpus,
@@ -27,7 +27,21 @@ from rag.tools import (
     list_blobs,
     move_gcs_file,
     delete_gcs_file,
-    delete_gcs_bucket
+    delete_gcs_bucket,
+    create_daily_test_corpus,
+    validate_retrieval,
+    promote_document_to_prod,
+    cleanup_test_environment,
+    ingest_document,
+    create_candidate_corpus,
+    run_regression_tests,
+    run_regression_tests_from_excel,
+    rollback_production,
+    phase_1_upload_and_ingest,
+    phase_2_regression_test_xlsx,
+    phase_3_promote_validated,
+    cleanup_test_environment,
+    initialize_infrastructure
 )
 
 
@@ -73,13 +87,21 @@ root_agent = Agent(
         get_corpus_id_by_display_name,
         get_file_id_by_name,
     
-        # Lifecycle Orchestration Tools (Commented out)
-        # create_daily_test_corpus,
-        # validate_retrieval,
-        # promote_document_to_prod,
-        # cleanup_test_environment
+        # Lifecycle Orchestration Tools
+        create_daily_test_corpus,
+        validate_retrieval,
+        promote_document_to_prod,
+        cleanup_test_environment,
+        ingest_document,
+        create_candidate_corpus,
+        run_regression_tests,
+        run_regression_tests_from_excel,
+        phase_1_upload_and_ingest,
+        phase_2_regression_test_xlsx,
+        phase_3_promote_validated,
+        rollback_production,
+        initialize_infrastructure
     ],
     output_key=AGENT_OUTPUT_KEY
 )
-
 

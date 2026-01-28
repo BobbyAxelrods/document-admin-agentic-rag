@@ -10,7 +10,10 @@ from rag.config import (
     RAG_DEFAULT_EMBEDDING_MODEL,
     RAG_DEFAULT_SEARCH_TOP_K,
     RAG_DEFAULT_TOP_K,
-    RAG_DEFAULT_VECTOR_DISTANCE_THRESHOLD
+    RAG_DEFAULT_VECTOR_DISTANCE_THRESHOLD,
+    RAG_DEFAULT_CHUNK_SIZE,
+    RAG_DEFAULT_CHUNK_OVERLAP,
+    RAG_DEFAULT_EMBEDDING_REQUESTS_PER_MIN,
 )
 
 # initialize vertexai
@@ -202,21 +205,35 @@ def delete_corpus(corpus_id: str) -> Dict[str, Any]:
 def import_files(
     corpus_id: str,
     gcs_uris: List[str],
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200
+    chunk_size: Optional[int] = None,
+    chunk_overlap: Optional[int] = None,
+    max_embedding_requests_per_min: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Imports files from Google Cloud Storage into a RAG corpus.
     """
     try:
         corpus_name = f"projects/{PROJECT_ID}/locations/{LOCATION}/ragCorpora/{corpus_id}"
-        
-        # Import files
+
+        if chunk_size is None:
+            chunk_size = RAG_DEFAULT_CHUNK_SIZE
+        if chunk_overlap is None:
+            chunk_overlap = RAG_DEFAULT_CHUNK_OVERLAP
+        if max_embedding_requests_per_min is None:
+            max_embedding_requests_per_min = RAG_DEFAULT_EMBEDDING_REQUESTS_PER_MIN
+
+        transformation_config = rag.TransformationConfig(
+            chunking_config=rag.ChunkingConfig(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+            ),
+        )
+
         response = rag.import_files(
-            corpus_name=corpus_name,
-            paths=gcs_uris,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
+            corpus_name,
+            gcs_uris,
+            transformation_config=transformation_config,
+            max_embedding_requests_per_min=max_embedding_requests_per_min,
         )
         
         imported_count = 0

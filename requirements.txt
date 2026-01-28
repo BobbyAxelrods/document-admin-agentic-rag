@@ -6,3 +6,6 @@ openai<2.0.0
 pydantic<2.12
 deprecated
 google-genai==1.14.0
+psycopg2-binary
+pandas
+openpyxl
