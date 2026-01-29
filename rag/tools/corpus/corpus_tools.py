@@ -30,13 +30,15 @@ def create_corpus(
     Args:
         display_name: A human-readable name for the corpus
         description: Optional description for the corpus
-        embedding_model: The embedding model to use (default: text-embedding-004)
+        embedding_model: The embedding model to use (default: configured RAG_DEFAULT_EMBEDDING_MODEL)
 
     Returns:
         A dictionary containing the created corpus details.
     """
-    if embedding_model is None:
-        embedding_model = RAG_DEFAULT_EMBEDDING_MODEL
+    # Force usage of the configured embedding model, ignoring any Agent-provided value
+    # This prevents issues where the Agent hallucinates "ada-002" or includes region prefixes
+    embedding_model = RAG_DEFAULT_EMBEDDING_MODEL
+
     try:
         embedding_model_config = rag.EmbeddingModelConfig(
             publisher_model=embedding_model
@@ -55,8 +57,9 @@ def create_corpus(
             "status": "success",
             "corpus_id": corpus_id,
             "display_name": display_name,
+            "embedding_model": embedding_model, # Return actual used model
             "name": corpus.name,
-            "message": f"Successfully created RAG corpus `{display_name}`"
+            "message": f"Successfully created RAG corpus `{display_name}` using model `{embedding_model}`"
         }
         
     except Exception as e:
@@ -237,13 +240,22 @@ def import_files(
         )
         
         imported_count = 0
+        failed_count = 0
+        skipped_count = 0
+        
         if hasattr(response, "imported_rag_files_count"):
              imported_count = response.imported_rag_files_count
+        if hasattr(response, "failed_rag_files_count"):
+             failed_count = response.failed_rag_files_count
+        if hasattr(response, "skipped_rag_files_count"):
+             skipped_count = response.skipped_rag_files_count
         
         return {
             "status": "success",
             "imported_count": imported_count,
-            "message": f"Successfully initiated import of {len(gcs_uris)} URIs into corpus '{corpus_id}'. Imported count: {imported_count}"
+            "failed_count": failed_count,
+            "skipped_count": skipped_count,
+            "message": f"Successfully initiated import of {len(gcs_uris)} URIs into corpus '{corpus_id}'. Imported: {imported_count}, Failed: {failed_count}, Skipped: {skipped_count}"
         }
     except Exception as e:
         return {

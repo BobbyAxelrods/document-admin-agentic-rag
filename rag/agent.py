@@ -45,7 +45,12 @@ from rag.tools import (
 )
 
 
-load_dotenv()
+# Ensure .env is loaded from the rag package directory if present; otherwise fallback
+_rag_env_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(_rag_env_path):
+    load_dotenv(_rag_env_path)
+else:
+    load_dotenv()
 AZURE = os.getenv("AZURE", "azure/gpt-4o")
 
 # build the instruction loader 
@@ -104,4 +109,3 @@ root_agent = Agent(
     ],
     output_key=AGENT_OUTPUT_KEY
 )
-

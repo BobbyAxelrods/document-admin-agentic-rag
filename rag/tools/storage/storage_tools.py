@@ -61,7 +61,11 @@ def create_gcs_bucket(
     sanitized_name = sanitized_name.strip('-')
     
     # Make globally unique by adding project ID
-    unique_bucket_name = f"{sanitized_name}-{project_id}"
+    # Check if project_id is already in the name to avoid duplication
+    if not sanitized_name.endswith(f"-{project_id}"):
+        unique_bucket_name = f"{sanitized_name}-{project_id}"
+    else:
+        unique_bucket_name = sanitized_name
     
     # Ensure within 63 char limit
     if len(unique_bucket_name) > 63:
