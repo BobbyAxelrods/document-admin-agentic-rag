@@ -28,6 +28,8 @@ from rag.tools import (
     move_gcs_file,
     delete_gcs_file,
     delete_gcs_bucket,
+    edit_gcs_bucket,
+    copy_gcs_bucket,
     # create_daily_test_corpus,
     # validate_retrieval,
     # promote_document_to_prod,
@@ -77,6 +79,8 @@ root_agent = Agent(
         move_gcs_file,
         delete_gcs_file,
         delete_gcs_bucket,
+        edit_gcs_bucket,
+        copy_gcs_bucket,
     
         # RAG Corpus Tools
         create_corpus,

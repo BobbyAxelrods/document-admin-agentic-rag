@@ -412,3 +412,12 @@ def get_file_id_by_name(corpus_id: str, file_display_name: str) -> Optional[str]
         return None
     except:
         return None
+
+def promote_to_prod():
+    # to do
+    try:
+
+        pass
+    except:
+        pass
+    pass

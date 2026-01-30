@@ -6,7 +6,9 @@ from rag.tools.storage import (
     list_blobs,
     move_gcs_file,
     delete_gcs_file,
-    delete_gcs_bucket
+    delete_gcs_bucket,
+    edit_gcs_bucket,
+    copy_gcs_bucket,
 )
 
 from rag.tools.corpus import (

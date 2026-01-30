@@ -1,5 +1,5 @@
 from google.cloud import storage
-from google.api_core.exceptions import GoogleAPIError, Conflict, Forbidden, BadRequest
+from google.api_core.exceptions import GoogleAPIError, Conflict, Forbidden, BadRequest,  NotFound, Forbidden
 from google.adk.tools import ToolContext
 from typing import List, Dict, Any, Optional
 import logging
@@ -370,4 +370,170 @@ def delete_gcs_bucket(
             "status": "error",
             "error_message": str(e),
             "message": f"Failed to delete bucket: {str(e)}"
+        }
+
+def edit_gcs_bucket(
+    tool_context: ToolContext,
+    bucket_name: str,
+    storage_class: Optional[str] = None,
+    enable_versioning: Optional[bool] = None,
+    labels: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
+    """
+    Edit an existing Google Cloud Storage bucket.
+
+    Args:
+        tool_context: The tool context for ADK
+        bucket_name: Name of the bucket to edit
+        storage_class: New storage class (e.g. STANDARD, NEARLINE)
+        enable_versioning: Enable or disable object versioning
+        labels: Labels to apply to the bucket
+
+    Returns:
+        Result dictionary describing the update
+    """
+    if not client:
+        return {"status": "error", "message": "Storage client not initialized."}
+
+    try:
+        bucket = client.get_bucket(bucket_name)
+
+        changes = []
+
+        # Update storage class
+        if storage_class:
+            bucket.storage_class = storage_class
+            changes.append("storage_class")
+
+        # Update versioning
+        if enable_versioning is not None:
+            bucket.versioning_enabled = enable_versioning
+            changes.append("versioning")
+
+        # Update labels
+        if labels:
+            bucket.labels = bucket.labels or {}
+            bucket.labels.update(labels)
+            changes.append("labels")
+
+        # Apply changes
+        bucket.patch()
+
+        if hasattr(tool_context, "state"):
+            tool_context.state["last_bucket_edited"] = bucket_name
+
+        return {
+            "status": "success",
+            "bucket_name": bucket_name,
+            "updated_fields": changes,
+            "storage_class": bucket.storage_class,
+            "versioning_enabled": bucket.versioning_enabled,
+            "labels": bucket.labels,
+            "message": f"Bucket '{bucket_name}' updated successfully"
+        }
+
+    except NotFound:
+        return {
+            "status": "error",
+            "error_type": "not_found",
+            "bucket_name": bucket_name,
+            "message": f"Bucket '{bucket_name}' does not exist"
+        }
+
+    except Forbidden as e:
+        return {
+            "status": "error",
+            "error_type": "permission_denied",
+            "bucket_name": bucket_name,
+            "message": "Permission denied. Ensure service account has 'roles/storage.admin'",
+            "error_details": str(e)
+        }
+
+    except BadRequest as e:
+        return {
+            "status": "error",
+            "error_type": "invalid_request",
+            "bucket_name": bucket_name,
+            "message": f"Invalid update request: {str(e)}"
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_type": "unknown",
+            "bucket_name": bucket_name,
+            "message": f"Failed to edit bucket: {str(e)}",
+            "error_details": str(e)
+        }
+
+def copy_gcs_bucket(
+    tool_context: ToolContext,
+    source_bucket_name: str,
+    destination_bucket_name: str,
+    delete_source: bool = False
+) -> Dict[str, Any]:
+    """
+    Copy all objects from one GCS bucket to another.
+    Optionally deletes the source bucket after copy.
+    But first ensure the destination bucket exists by creating it if necessary.
+    """
+    if not client:
+        return {"status": "error", "message": "Storage client not initialized."}
+
+    try:
+        source_bucket = client.get_bucket(source_bucket_name)
+        destination_bucket = client.get_bucket(destination_bucket_name)
+
+        blobs = list(source_bucket.list_blobs())
+        copied = 0
+
+        for blob in blobs:
+            source_bucket.copy_blob(
+                blob,
+                destination_bucket,
+                blob.name
+            )
+            copied += 1
+
+        if delete_source:
+            # Bucket must be empty before deletion
+            for blob in source_bucket.list_blobs():
+                blob.delete()
+            source_bucket.delete()
+
+        if hasattr(tool_context, "state"):
+            tool_context.state["last_bucket_copy"] = {
+                "from": source_bucket_name,
+                "to": destination_bucket_name
+            }
+
+        return {
+            "status": "success",
+            "source_bucket": source_bucket_name,
+            "destination_bucket": destination_bucket_name,
+            "objects_copied": copied,
+            "source_deleted": delete_source,
+            "message": f"Copied {copied} objects from '{source_bucket_name}' to '{destination_bucket_name}'"
+        }
+
+    except NotFound as e:
+        return {
+            "status": "error",
+            "error_type": "not_found",
+            "message": str(e)
+        }
+
+    except Forbidden as e:
+        return {
+            "status": "error",
+            "error_type": "permission_denied",
+            "message": "Permission denied. Ensure storage permissions are sufficient.",
+            "error_details": str(e)
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_type": "unknown",
+            "message": f"Bucket copy failed: {str(e)}"
         }
